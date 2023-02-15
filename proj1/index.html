@@ -229,6 +229,7 @@ finding the barycentric coordinates/weights of a rectangle.</p>
   Once we sample 16 times per pixel, the difference between bilinear and nearest is almost negligible. Bilinear makes transitions sligtly smoother, but clearly the 16 samples per pixel are doing most of the work and improving the quality of the image.
 
 </p>
+  <p>The largest difference between nearest and bilinear sampling occurs when the texture is displayed on a low resolution screen, or when the texture needs to be magnified. These are quite similar and are basically analagous to each other.</p>
 <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
 
 <p>
