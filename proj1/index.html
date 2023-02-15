@@ -1,7 +1,283 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 1 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Project 1: Rasterizer</h1>
+<h2 align="middle">Brandon Yermash and Brandon Suen, CS184</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>
+  For this project, we implemented three different ways to rasterize triangles and provided multiple settings to modify the rasterization pipeline and/or transform the shapes to produce a drawing on the GUI.
+  All of our rasterization methods take in the vertex coordinates of the triangles as arguments, and then take in color or texture arguments as needed.
+  The three rasterization pipelines we implemented are rasterizing a single-color triangle, an interpolated color gradient triangle, and a textured triangle.
+  The settings we implemented include sampling/supersampling at different rates and different strategies for sampling levels and pixels when it comes to rendering textures.
+  In general, the strategy we use to rasterize our triangles is to calculate the color as needed for each sample we take and populate the sample buffer with these colors.
+  Then, once we've finished making the sample buffer, we average out the colors into a normalized frame buffer with the appropriate dimensions of pixels we want to output.
+</p>
+<p>
+  We learned about many things from this project, including the difficulties in handling edge cases such as the literal edges of pixel bounding boxes when applying computer graphics methods.
+  There are lots of implementation details hidden behind the theoretical strategies.
+</p>
+
+<h2 align="middle">Section I: Rasterization</h2>
+
+<h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
+<p>Basic Implementation: 
+  We iterated through each x and y value in the bounding box of the given triangle. For each (x,y) pair in the bounding box, 
+  we checked if that pixel was in the bounds of the given triangle. If it was, we filled the pixel with the color passed into the function. 
+  To check that the point was within the triangle, we evaluated the center of the pixel (x+0.5, y+0.5). A point is within a triangle iff 
+  it is in the intersection of the three halfplanes made by the lines of the triangles or it is outside of each of the halfplanes. Intuitively, the second condition is strange,
+  but it accounts for the uncertain winding order of the points when rasterizing the triangle. Barycentric coordinates avoid this issue, but 
+  using the half-plane strategy, there must be two checks (one for each winding order). We have provided images below that help explain the conditions.
+</p>
+<p>
+  Our basic implementation is no slower than one that checks each sample within the bouding box because that is precisely what our algorithm does. 
+  Our algorithm systematically checks and evaluates each sample in the bounding box exactly once to rasterize the triangle.
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/p1.png" align="middle" width="400px"/>
+          <figcaption align="middle">basic/test4.svg</figcaption>
+        </td>
+        <td>
+          <img src="images/red.png" align="middle" width="400px"/>
+          <figcaption align="middle">basic/test4.svg: issues with no supersampling</figcaption>
+        </td>
+      </tr>
+      <br>
+      <tr>
+        <td>
+          <img src="images/in.png" align="middle" width="400px"/>
+          <figcaption align="middle">intersection of the halfplanes</figcaption>
+        </td>
+        <td>
+          <img src="images/out.png" align="middle" width="400px"/>
+          <figcaption align="middle">joint denial of the halfplanes</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+</p>
+  <p>Faster Implementation: We did create another version of the triangle rasterization algorithm that was modified to be much more efficient. This algorithm utilized two different optimizations. 
+    
+    <p>First, we didn't check every sample within
+      the bounding box. Our algorim steps down all y values then incerements x. However, as our algorithm checks samples, if the inner loop (stepping through the y values) has intersected the triangle, 
+      as soon as it leaves the triangle we can break the loop because it is impossible for there to be more samples within the triangle 
+      underneath that point (because triangles are convex). If the shape we were rasterizing was concave, then it could potentially intersect again, but this does not happen with triangles or any convex polygon, allowing for this optimization.</p>
+    <p>Second, we removed a large chunk of arithmetic from the halfplane calculations outside one or both loops of the bounding box. The arithmetic for describing the halfplanes can be split into many variables, most of which
+      do not reference the current pixel. For instance, the calculations (x0 - x1) or (y1 - y2) appear in every halfplane check. These only have to be calculated once for every sample in the bounding box. Similarly, there are calculations only involving the current x coordinate and the vertices of the triangle (e.g. (x - x2)). These only have to be calculated once per outer loop corresponding to each new x. </p>
+  </p>
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/convex.png" align="left" width="300px"/>
+          <figcaption align="middle">A convex shape</figcaption>
+        </td>
+        <td>
+          <img src="images/concave.svg" align="right" width="300px"/>
+          <figcaption align="middle">A concave (non-convex) shape</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+<h3 align="middle">Part 2: Antialiasing triangles</h3>
+
+<p>
+  Our algorithm for supersampling involves two phases that interact with two primary data structures: the sample buffer and the frame buffer.
+  The first phase populates the sample buffer with the colors sampled at points across the grid space with frequency according to the sample rate.
+  The second phase traverses the sample buffer and averages out groups of colors to produce the output color for each pixel in the frame buffer data structure.
+</p>
+<p>
+  We had to adjust the rasterization pipeline for different values of the sample rate.
+  This involved resizing the sample buffer by a factor of the sample rate, scaling up the coordinates of the triangle we drew by sqrt(sample rate) to align the points with the resized sample buffer, and making appropriate scalings whenever we wrote/read the sample buffer.
+</p>
+<p>Supersampling is useful because it allows us to more accurately represent graphical elements that don't perfectly align with the pixels we're using to display them.</p>
+<p>We used supersampling to antialias our triangles by sampling color values more frequently across the image space to eliminate the sampling errors that occurred when we sampled too slowly.</p>
+<p>
+  One issue we faced was properly scaling our values, especially when indexing into the sample buffer.
+  We were able to solve this by thinking carefully about how each sampled value translates into a visual representation of the sample buffer.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="./images/task-2-1.png" align="middle" width="500px"/>
+        <figcaption align="middle">Sample rate = 1</figcaption>
+      </td>
+      <td>
+        <img src="./images/task-2-4.png" align="middle" width="500px"/>
+        <figcaption align="middle">Sample rate = 4</figcaption>
+      </td>
+    </tr>
+    <br/>
+    <tr>
+      <td>
+        <img src="./images/task-2-16.png" align="middle" width="500px"/>
+        <figcaption align="middle">Sample rate = 16</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>In the images above, you can see that jaggies are eliminated and the drawing looks closer and closer to an actual triangle as the sample rate is increased. This is occurring because our supersampling algorithms helps antialias and eliminate sampling errors by sampling more points and averaging them out.</p>
+
+<h3 align="middle">Part 3: Transforms</h3>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="./images/mr.png" align="middle" width="500px"/>
+        <figcaption align="middle">Robot sitting cross-legged meditating :)</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<h2 align="middle">Section II: Sampling</h2>
+
+<h3 align="middle">Part 4: Barycentric coordinates</h3>
+
+<p>
+  Barycentric coordinates are an alternate way of representing a point within a triangle by scaling three parameters according to the distance the point is from each triangle vertex.
+  As you can see in the image below on the left-side, each vertex of the triangle has an assigned color and the colors blend within the triangle.
+  Barycentric coordinates are an effective method of computing this blend of colors because each point's color value can be computed as a weighted sum of the three vertex colors weighted by the barycentric coordinate parameters.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="./images/task-4-slide.png" align="middle" width="500px"/>
+        <figcaption align="middle">Image taken from a CS 184 lecture slide</figcaption>
+      </td>
+      <td>
+        <img src="./images/task-4.png" align="middle" width="500px"/>
+        <figcaption align="middle">Screenshot of program output</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+<p>Pixel sampling is the process of mapping texels (or texture pixels) onto their corresponding pixels in the output image. This is not straightforward, since pixels are limited and discrete. For instance, given a float (u,v) coordinate, you must figure out a way to accurately use the integer points around it to approximate the texture on the output image. There 
+  are many ways of approximating pixel sampling for texture mapping. We utilized two of these: nearest pixel sampling and bilinear sampling.
+  
+</p>
+<p>The two most basic pixel sampling methods are nearest pixel sampling and bilinear sampling. Nearest pixel simply samples the nearest integer pixel to the given point. 
+  Bilinear takes a weighted average of the four nearest integer samples in a process extremely similar to finding the barycentric coordinates for a triangle. In fact, the process is homomorphic to 
+finding the barycentric coordinates/weights of a rectangle.</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="./images/n1.png" align="middle" width="500px"/>
+        <figcaption align="middle">nearest sampling + 1 sample per pixel</figcaption>
+      </td>
+      <td>
+        <img src="./images/n16.png" align="middle" width="500px"/>
+        <figcaption align="middle">nearest sampling + 16 samples per pixel</figcaption>
+      </td>
+    </tr>
+    <br/>
+    <tr>
+      <td>
+        <img src="./images/b1.png" align="middle" width="500px"/>
+        <figcaption align="middle">bilinear sampling + 1 sample per pixel</figcaption>
+      </td>
+      <td>
+        <img src="./images/b16.png" align="middle" width="500px"/>
+        <figcaption align="middle">bilinear sampling + 16 samples per pixel</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>Nearest sampling with one sample per pixel is clearly the lowest quality, but also by far the most efficient. 
+  It is the only picture with clear and large gaps in the middle of lattitude and longitude lines. Bilinear sampling with 1 sample per pixel improves the quality slightly by blurring the image and removing some gaps between the lattitude and longitutde lines.
+  Once we sample 16 times per pixel, the difference between bilinear and nearest is almost negligible. Bilinear makes transitions sligtly smoother, but clearly the 16 samples per pixel are doing most of the work and improving the quality of the image.
+
+</p>
+<h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+
+<p>
+  Level sampling is a way to evaluate how much detail or resolution is needed at different areas of an image.
+  To implement level sampling for texture mapping, we calcluated log of the maximum change occurring in either direction of the texture space while moving across the image space.
+  Using this level value, we selected a mipmap level, which is a pre-computed representation of the texture at a specific resolution.
+  The lower the level, the better the resolution we used to represent the texture.
+</p>
+<p>
+  Supersampling with an increased sample rate gives antialiasing benefits at the cost of speed and memory.
+  Similarly, pixel sampling for textures gives antialiasing benefits at the cost of speed and memory.
+  Mipmapping with level sampling increases memory usage, but because the levels are precomputed and smaller resolutions are used gives speed improvements while providing antialiasing benefits.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="./images/task-6-zero-bilinear.png" align="middle" width="500px"/>
+        <figcaption align="middle">Level 0 + Bilinear pixel</figcaption>
+      </td>
+      <td>
+        <img src="./images/task-6-nearest-nearest.png" align="middle" width="500px"/>
+        <figcaption align="middle">Nearest level + Nearest pixel</figcaption>
+      </td>
+    </tr>
+    <br/>
+    <tr>
+      <td>
+        <img src="./images/task-6-bilinear-nearest.png" align="middle" width="500px"/>
+        <figcaption align="middle">Bilinear level + Nearest pixel</figcaption>
+      </td>
+      <td>
+        <img src="./images/task-6-trilinear.png" align="middle" width="500px"/>
+        <figcaption align="middle">Bilinear level + Bilinear pixel</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>
+  One issue we had with this part was figuring out what the expected output should be and how the levels should be calculated.
+  We solved this by experimenting a lot with the code and using lots of debugging techniques.
+</p>
+
+<h2 align="middle">Section III: Art Competition</h2>
+<p>If you are not participating in the optional art competition, don't worry about this section!</p>
+
+<h3 align="middle">Part 7: Draw something interesting!</h3>
+
+</body>
 </html>
