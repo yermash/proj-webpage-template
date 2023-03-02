@@ -49,7 +49,11 @@
 
 <h2 align="middle">Overview</h2>
 <p>
-    YOUR RESPONSE GOES HERE
+  For the de Casteljau's algorithm questions, we simply implemented de Casteljau's exactly as the lecture slides gave it. We ran into minimal issues here except for trying to understand the intracacies behind std::vector and Vector3D.
+  For part three, we calculated the area-weighted averages, with the one big insight being that the area of a triangle was half the absolute value of its face's normal.
+  Split and flip were also algorithmic in nature. We followed the approach given in the project spec and understanding the halfedgemesh data structure thoroughly. We rearranged pointers and created new mesh elements.
+  Part 6 (upsampling), we had to loop over edges and vertices in the entire mesh and split and flip according to the loop-subdivision algorithm. We also reassign positions for specific edges and vertices as appropriate. 
+  This was by far the most difficult part, and required frequent and involved debugging, often involving stepping through the debugger and checking values.
 </p>
 <br>
 
