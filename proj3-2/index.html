@@ -1,7 +1,225 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
+		<style>
+			div.padded {
+				padding-top: 0px;
+				padding-right: 100px;
+				padding-bottom: 0.25in;
+				padding-left: 100px;
+			}
+		</style>
+		<title>Brandon Suen and Brandon Yermash | CS 184</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
 	</head>
 	<body>
-		Project 3-2 here
+		<br />
+		<h1 align="middle">Assignment 3-2: Additional Features to PathTracer</h1>
+		<h2 align="middle">Brandon Suen and Brandon Yermash</h2>
+		<h2 align="middle">(Webpage URL)</h2>
+
+		<div class="padded">
+			* NOTE: For this project, you will choose TWO out of the four given parts
+			to complete. One of those parts must be Part 1 or Part 2. In other words,
+			you can choose any combination of two parts except the pair (Part 3, Part
+			4).
+
+			<p><b>Overview</b></p>
+			<p>
+				For part 2, we implemented the Microfacet model in order to model
+				reflective materials like metals. This included writing formulas into
+				code to produce and sample the model. We ran into a few bugs for this
+				part, but we were able to overcome them. For part 4, we implemented a thin lens to simulate
+				a depth of field effect. This required some overhauling of 3-1 and some rather interesting and complex geometry.
+			</p>
+
+			
+			<br />
+
+			<h3 align="middle">Part 2. Microfacet Material</h3>
+			<p>
+				<b>
+					Show a screenshot sequence of 4 images of scene
+					`CBdragon_microfacet_au.dae` rendered with $\alpha$ set to 0.005,
+					0.05, 0.25 and 0.5. The other settings should be at least 128 samples
+					per pixel and 1 samples per light. The number of bounces should be at
+					least 5. Describe the differences between different images. Note that,
+					to change the $\alpha$, just open the .dae file and search for
+					`microfacet`.
+				</b>
+			</p>
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img src="./images/dragon-005.png" height="400" />
+						<figcaption align="middle">alpha = 0.005</figcaption>
+					</td>
+					<td>
+						<img src="./images/dragon-05.png" height="400" />
+						<figcaption align="middle">alpha = 0.05</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img src="./images/dragon-25.png" height="400" />
+						<figcaption align="middle">alpha = 0.25</figcaption>
+					</td>
+					<td>
+						<img src="./images/dragon-5.png" height="400" />
+						<figcaption align="middle">alpha = 0.5</figcaption>
+					</td>
+				</tr>
+			</table>
+			<p>
+				The value of alpha represents how rough the surface of the dragon is.
+				For the lowest value, alpha = 0.005, the dragon's surface is very
+				smooth. This produces a very glossy image in which the dragon's surface
+				appears almost like a gold-tinted mirror. The dragon itself is also very
+				noisy with many white dots. The background also has a large amount of
+				white dots of noise. Raising it to alpha = 0.05, the dragon remains very
+				glossy and mirror-like, but it has less noise and retains slightly more
+				of its gold color. The noise in the background of the scene also
+				decreases. Raising it to alpha = 0.25 makes significant change. The
+				dragon is now much less glossy and no-longer appears like a mirror. The
+				dragon's color is still very impacted by the blue and red colors of the
+				walls, however. The background noise seems to be mostly gone. Raising
+				the surface roughness to the maximum value of alpha = 0.5 makes the
+				dragon appear in its least glossy and most golden state, with less (but
+				sitll noticeable) blue and red color influence from the walls.
+			</p>
+			<br />
+			<p>
+				<b>
+					Show two images of scene `CBbunny_microfacet_cu.dae` rendered using
+					cosine hemisphere sampling (default) and your importance sampling. The
+					sampling rate should be fixed at 64 samples per pixel and 1 samples
+					per light. The number of bounces should be at least 5. Briefly discuss
+					their difference.
+				</b>
+			</p>
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img src="./images/bunny-cosine.png" height="400" />
+						<figcaption align="middle">Cosine hemisphere sampling</figcaption>
+					</td>
+					<td>
+						<img src="./images/bunny-custom.png" height="400" />
+						<figcaption align="middle">Custom importance sampling</figcaption>
+					</td>
+				</tr>
+			</table>
+			<p>
+				The two sampling methods produce relatively similar backgrounds of the
+				scene, with the walls, floor, and ceiling looking similar with white
+				dots of noise. The importance sampling method we implemented, however,
+				produces a significant improvement when it comes to the bunny itself.
+				The bunny produced with cosine hemisphere sampling is covered in black
+				dots of noise. Our sampling method produced a very shiny and smooth
+				bunny, on the other hand.
+			</p>
+			<br />
+			<p>
+				<b>
+					Show at least one image with some other conductor material, replacing
+					`eta` and `k`. Note that you should look up values for real data
+					rather than modifying them arbitrarily. Tell us what kind of material
+					your parameters correspond to.
+				</b>
+			</p>
+			<img src="./images/dragon-cobalt.png" height="400" />
+			<p>This dragon's parameters have been set to model cobalt.</p>
+			<br />
+
+			
+			<br />
+
+			<h3 align="middle">Part 4. Depth of Field</h3>
+			<b>
+				For these subparts, we recommend using a microfacet BSDF scene to show
+				off the cool out of focus effects you can get with depth of field!
+			</b>
+			<p>
+				<b>
+					In a few sentences, explain the differences between a pinhole camera
+					model and a thin-lens camera model.
+				</b>
+			</p>
+			<p>The pinhole camera model (implemented in 3-1) is sort of an ideal model where light enters the camera through a miniscule pinhole.
+				This implies that any ray of light that goes through the pinhole can only affect a single point or pixel in the scene (everything is automatically focused).
+				On the other hand, a thin-lens model the light from the scene is refracted through the lens and can hit any number of pixels in the image which can blur and create focus/depth of field effects.
+			</p>
+			<br />
+			<p>
+				<b>
+					Show a "focus stack" where you focus at 4 visibly different depths
+					through a scene. Make sure to include all screenshots.
+				</b>
+			</p>
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img src="./images/focus4ap025.png" height="400" />
+						<figcaption align="middle">focal distance = 4 (aperture = 0.25)</figcaption>
+					</td>
+					<td>
+						<img src="./images/focus45ap025.png" height="400" />
+						<figcaption align="middle">focal distance = 4.5 (aperture = 0.25)</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img src="./images/focus47ap025.png" height="400" />
+						<figcaption align="middle">focal distance = 4.7 (aperture = 0.25)</figcaption>
+					</td>
+					<td>
+						<img src="./images/focus5ap025.png" height="400" />
+						<figcaption align="middle">focal distance = 5 (aperture = 0.25)</figcaption>
+					</td>
+				</tr>
+			</table>
+			<br />
+			<p>
+				<b>
+					Show a sequence of 4 pictures with visibly different aperture sizes,
+					all focused at the same point in a scene. Make sure to include all
+					screenshots.
+				</b>
+			</p>
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img src="./images/focus47ap01.png" height="400" />
+						<figcaption align="middle">aperture = 0.1 (focal distance = 4.7)</figcaption>
+					</td>
+					<td>
+						<img src="./images/focus47ap025.png" height="400" />
+						<figcaption align="middle">aperture = 0.25 (focal distance = 4.7)</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img src="./images/focus47ap05.png" height="400" />
+						<figcaption align="middle">aperture = 0.5 (focal distance = 4.7)</figcaption>
+					</td>
+					<td>
+						<img src="./images/focus47ap075.png" height="400" />
+						<figcaption align="middle">aperture =0.75 (focal distance = 4.7)</figcaption>
+					</td>
+				</tr>
+			</table>
+			<br />
+
+			<p><b>Collaboration Note</b></p>
+			<p>
+				Us Brandons have collaborated for every project and for every project
+				this partnership has been mutually beneficial. We worked together on
+				this project on the couch at our house, taking turns writing code. We
+				learned that it's fun to code together.
+			</p>
+
+			<h4>Website URL: https://yermash.github.io/proj-webpage-template/proj3-2/index.html</h4>
+		</div>
 	</body>
 </html>
