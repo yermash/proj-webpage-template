@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta content="text/html; charset=UTF-8" http-equiv="content-type">
+	<title>Stylistic Shaders in Unity - CS 184 Project Proposal</title>
+	<style type="text/css">
+		body {
+			font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+			font-size: 14px;
+			line-height: 1.5;
+			color: #333;
+			background-color: #fff;
+			padding: 0 calc(max(10px, 30% - 120px));
+		}
+		h1 {
+			font-size: 36px;
+			margin-bottom: 0px;
+		}
+		h2 {
+			font-size: 30px;
+			margin-top: 40px;
+			margin-bottom: 0px;
+		}
+		h3 {
+			font-size: 20px;
+			margin: 4px 0;
+		}
+		p {
+			font-size: 16px;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>Stylistic Shaders in Unity</h1>
+	<h3>Uri Kreindler, Gabriel Mitnick, Brandon Suen, and Brandon Yermash</h3>
+	<p>We will create a number of different non-photorealistic shaders in Unity and combine them into a demo scene. We will potentially create a single shader that is more complex and detailed to showcase the scene.</p>
+	<p><em>Question for TA&rsquo;s: Would it be okay if we used Unity&rsquo;s visual programming &ldquo;shader graph&rdquo; tool? Or should we use only Cg/HLSL code? Or a mix of the two?</em></p>
+
+	<h2>Problem Description</h2>
+	<p>Just because a renderer has optimal physically accurate doesn&rsquo;t mean that it&rsquo;s optimal for a specific application. In animations, static art, and interactive art like videogames, non-physically accurate shaders might give more desirable results. How can we go beyond the aesthetic value of physically-based rendering by making more stylized, unrealistic algorithms? We&rsquo;ll approach this intersection of computer science and art by writing shaders for Unity, using Cg/HLSL and Unity&rsquo;s shader graph tool. We&rsquo;ll also create a sample scene in Unity to demonstrate the shaders.</p>
+
+	<h2>Goals and Deliverables</h2>
+	<p>We&rsquo;ll make a simple demo scene in Unity with different types of geometry and some simple interaction. Our deliverables will be a playable Unity project and a video demo.</p>
+	<p>Our metric for quality will be a combination of subjective aesthetic judgment, visual legibility of objects, and rendering framerate. We want to come up with shaders that look nice, but that also allow a viewer to clearly understand the geometry shown. Also, we would like to be able to render a scene in real time at 30 or 60 fps for interactive applications.</p>
+	<p><b>Baseline plan:</b> We plan to come up with a few different stylized shaders and at least a simple static scene to render with our shaders. As inspiration, we&rsquo;re interested in replicating different cel shading styles from games like Breath of the Wild and Borderlands, but also playing with the code to come up with our own new approaches.</p>
+	<p><b>Stretch goal:</b> We would like to expand on the scene and make it interactive; and combine the different styles we find into a more complex shader to render different objects with algorithms representing different materials. Our north star here is a game currently under development on <a href="https://www.google.com/url?q=https://www.youtube.com/@t3ssel8r/videos&amp;sa=D&amp;source=editors&amp;ust=1680679355926094&amp;usg=AOvVaw03pEoJ52DMGrgYt8__HVdh">a YouTube channel called t3ssel8r</a>. It has an awesome retro pixel-art style that looks like hand-drawn 2D sprites, but is actually rendered from 3D geometry. There&rsquo;s special handling of different objects like grass and water. We&rsquo;d love to figure out how this is done and replicate it or make our own style.</p>
+
+	<h2>Schedule</h2>
+	<p><b>Week 1:</b> Learn Cg/HLSL/Unity and research existing algorithms. Develop ideas for shaders</p>
+	<p><b>Week 2:</b> Implement a few different shader ideas and a basic scene</p>
+	<p><b>Week 3:</b> Further develop the Unity scene and expand on one or two specific shaders</p>
+	<p><b>Week 4:</b> Put together all shaders with scene and create presentation</p>
+
+	<h2>Resources</h2>
+	<p><b>Software:</b> Unity, Cg/HLSL</p>
+	<p><b>Hardware:</b> We want to run our Unity project on our laptops (Macbooks). This means no proprietary Nvidia tools.</p>
+	<br>
+	<br>
+</body>
+
+</html>
