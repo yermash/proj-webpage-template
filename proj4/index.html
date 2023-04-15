@@ -1,7 +1,777 @@
-<html>
+<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2017</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Brandon Suen and Brandon Yermash, CS184-??</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the project.</p>
+
+<h2 align="middle">Part I: Masses and springs</h2>
+<table style="width: 100%">
+  <tr align="center">
+    <td>
+      <img src="./images/p1-no-shear.png" height="400" />
+      <figcaption align="middle">pinned2.json without shearing constraints</figcaption>
+    </td>
+    <td>
+      <img src="./images/p1-only-shear.png" height="400" />
+      <figcaption align="middle">pinned2.json with only shearing constraints</figcaption>
+    </td>
+  </tr>
+  <tr align="center">
+    <td>
+      <img src="./images/p1-all.png" height="400" />
+      <figcaption align="middle">pinned2.json with all constraints</figcaption>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html> -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+		<style>
+			body {
+				background-color: #404040;
+				background-color: white;
+				padding: 100px;
+				width: 1000px;
+				margin: auto;
+				text-align: left;
+				font-weight: 300;
+				font-family: 'Open Sans', sans-serif;
+				color: #121212;
+				/* cursor: url(https://rsha256.github.io/teapot-clear32.png), default!important;
+      cursor: url(https://rsha256.github.io/teapot-clear32.png), pointer!important; */
+				cursor: url(https://rsha256.github.io/dragon-clear32.png), default !important;
+				cursor: url(https://rsha256.github.io/dragon-clear32.png), pointer !important;
+				/* cursor: url(https://rsha256.github.io/cloth-clear-32.png), default!important;
+      cursor: url(https://rsha256.github.io/cloth-clear-32.png), pointer!important; */
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+    kbd {
+      color: #121212;
+    }
+    blockquote {
+      color: #888;
+      border: 2px solid #333;
+      padding: 10px;
+      background-color: #ccc;
+    }
+
+    table.custom-tbl {
+      border: 1px solid;
+    }
+
+    table.custom-tbl th {
+      border: 1px solid;
+      background-color: rgb(99, 209, 209);
+    }
+
+    table.custom-tbl td {
+      border: 1px solid;
+      background-color: #f1e686a8;
+    }
+  </style>
+
+  <title>CS 184 Mesh Editor</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <!-- Not using below due to lacking bold fontfaces -->
+  <!-- <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro|Source+Sans+Pro:400,700" rel="stylesheet"> -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono|Roboto+Slab|Roboto:300,400,500,700" rel="stylesheet" />
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+  </script>  
+</head>
+
+<body>
+
+  <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+  <h1 align="middle">Project 4: Cloth Simulator</h1>
+  <h2 align="middle">Brandon Yermash & Brandon Suen, CS184</h2>
+
+  <br><br>
+
+  <div>
+    <h2 align="middle">Overview</h2>
+    <p>This project consists of a spring and mass based cloth simulator along with creating shaders to style said cloth.
+      In part 1, we created the objects that define the cloth (masses and springs) and set them up according to Hooke's Law. Eventually, we implemented Vertlet integration to describe the motion for the springs and therefore the cloth.
+      We handled collissions between the cloth and itself + spheres and planes. This was achieved using basic physical properties such as normal force from the surfaces. In part 5, we used shaders to achieve lighting effects and perform surface alterations to our meshes.
+    </p>
+  </div>
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-1">
+  <h2 align="middle">Part 1: Masses and springs</h2>
+  </a>
+    <blockquote><b>
+      Take some screenshots of <i>scene/pinned2.json</i> from a viewing angle where you can clearly see the cloth wireframe 
+      to show the structure of your point masses and springs. 
+    </b></blockquote>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p1-1.png" align="middle" width="300vw" />
+          </td>
+          <td>
+            <img src="images/p1-2.png" align="middle" width="300vw" />
+            <figcaption>Initial configuration ($\text{ks} = 5,000$)</figcaption>
+          </td>
+          <td>
+            <img src="images/p1-3.png" align="middle" width="300vw" />
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+
+    <blockquote><b>
+      Show us what the wireframe looks like (1) without any shearing constraints, 
+      (2) with only shearing constraints, and (3) with all constraints.
+    </b></blockquote>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p1-no-shear.png" align="middle" width="500px" />
+            <figcaption>No shearing constraints</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="images/p1-only-shear.png" align="middle" width="500px" />
+            <figcaption>Only shearing constraints</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="images/p1-all.png" align="middle" width="500px" />
+            <figcaption>All constraints</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-2">
+  <h2 align="middle">Part 2: Simulation via numerical integration</h2>
+  </a>
+    <blockquote><b>
+      Experiment with some the parameters in the simulation. 
+      To do so, pause the simulation at the start with <kbd>P</kbd>, modify the values of interest, and then resume by pressing <kbd>P</kbd> again. 
+      You can also restart the simulation at any time from the cloth's starting position by pressing <kbd>R</kbd>.
+      <br />
+      <small>
+      Describe the effects of changing the spring constant <code>ks</code>; how does the cloth behave from start to rest with a very low <code>ks</code>? 
+      A high <code>ks</code>?
+      </small>
+    </b></blockquote>
+
+    <p>
+      Changing the spring constant <code>ks</code> has rather interesting effects on the cloth and its stiffness. For example, a high spring constant of around 50,000 N/m
+      results in a very stiff cloth. A low stiffness results in a bouncy, loose, and especially not stiff cloth.
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p2-US.png" align="middle" width="400vw" />
+            <figcaption>5 N/m</figcaption>
+          </td>
+          <td>
+            <img src="images/p2-S.png" align="middle" width="400vw" />
+            <figcaption>50,000 N/m</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <blockquote><b>
+      <small>
+        What about for <code>density</code>?
+      </small>
+    </b></blockquote>
+
+    <p>
+      Interestingly, changing the density has the inverse effect of the spring constant. This is because the density acts on the point masses rather
+      than the springs. Increasing the density has the same effect as decreasing the stiffness since there is more force on the springs. Similarly, decreasing the density has the same effect as increasing the spring constant (increasing stiffness).
+
+    </p>
+    
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p2-UD.png" align="middle" width="400vw" />
+            <figcaption>4 g/cm^2</figcaption>
+          </td>
+          <td>
+            <img src="images/p2-D.png" align="middle" width="400vw" />
+            <figcaption>5,000 g/cm^2</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    
+    <blockquote><b>
+      <small>
+        What about for <code>damping</code>?
+      </small>
+    </b></blockquote>
+
+    <p>
+      The damping constant has minimal to no effect on the final state of the cloth, but rather affects the rate at which the cloth reaches its resting point.
+      For instance, a cloth with a very high damping constant (~100%) will take an extremely long time to reach its rest, but a cloth with no damping (as shown below) will take an unfathomably long time (if at all) to reach its rest state and will just bounce around.
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p2-noDamp.png" align="middle" width="400vw" />
+            <figcaption>0% damping</figcaption>
+          </td>
+          <td>
+            <img src="images/p2-DAMP.png" align="middle" width="400vw" />
+            <figcaption>100% damping</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <blockquote><b>
+      <small>
+      For each of the above, observe any noticeable differences in the cloth compared to the default parameters 
+      and show us some screenshots of those interesting differences and describe when they occur.
+      </small>
+    </b></blockquote>
+  
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p2-default.png" align="middle" width="400vw" />
+            <figcaption>Default Parameters</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+  
+    <p>
+      Screenshots of non-default already shown above. Interestingly, the cloth with 0 dampening looks nothing like the default one. This is because with no dampening it is incredibly chaotic and can never come to rest.
+      The other cloths all behave differently from default as described above. One more comment is that the cloth with 100% dampening is identical to default cloth. This makes sense as more dampening shouldn't change the outcome for this specific cloth, but instead just take longer to come to rest.
+    </p>
+
+
+    <blockquote><b>
+    Show us a screenshot of your shaded cloth from <i>scene/pinned4.json</i> in its final resting state! 
+    If you choose to use different parameters than the default ones, please list them.
+    </b></blockquote>
+
+    <div align="middle">
+      <img src="images/p2-4.png" align="middle" width="100%" />
+    </div>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-3">
+  <h2 align="middle">Part 3: Handling collisions with other objects</h2>
+  </a>
+    <blockquote><b>
+      Show us screenshots of your shaded cloth from <i>scene/sphere.json</i> in its final resting state 
+      on the sphere using the default <code>ks = 5000</code> as well as with <code>ks = 500</code> and <code>ks = 50000</code>. 
+    </b></blockquote>
+    
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p3-500.png" align="middle" width="300vw" />
+            <figcaption>$\text{ks} = 500$</figcaption>
+          </td>
+          <td>
+            <img src="images/p3-5000.png" align="middle" width="300vw" />
+            <figcaption>Initial configuration ($\text{ks} = 5,000$)</figcaption>
+          </td>
+          <td>
+            <img src="images/p3-3.png" align="middle" width="300vw" />
+            <figcaption>$\text{ks} = 50,000$</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+
+    <blockquote><b>
+      <small>Describe the differences in the results.</small>
+    </b></blockquote>
+
+    <p>
+      As we increase the spring constant (stiffness), the cloth resting on the sphere conforms less and less to the sphere and maintains its original horizontal strech more.
+    </p>
+
+
+    <blockquote><b>
+      Show us a screenshot of your shaded cloth lying peacefully at rest on the plane. 
+      If you haven't by now, feel free to express your colorful creativity with the cloth! 
+      (You will need to complete the shaders portion first to show custom colors.)
+    </b></blockquote>
+
+    <div align="middle">
+      <img src="images/p3-plane.png" align="middle" width="100%" />
+    </div>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-4">
+  <h2 align="middle">Part 4: Handling self-collisions</h2>
+  </a>
+
+    <blockquote><b>
+      Show us at least 3 screenshots that document how your cloth falls and folds on itself, 
+      starting with an early, initial self-collision 
+      and ending with the cloth at a more restful state (even if it is still slightly bouncy on the ground).
+    </b></blockquote>
+    
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/p4-sc1.png" align="middle" width="300vw" />
+            <figcaption>Self collision 1</figcaption>
+          </td>
+          <td>
+            <img src="images/p4-sc2.png" align="middle" width="300vw" />
+            <figcaption>Self collision 2</figcaption>
+          </td>
+          <td>
+            <img src="images/p4-sc3.png" align="middle" width="300vw" />
+            <figcaption>Self collision 3</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+
+    <blockquote><b>
+      Vary the <code>density</code> as well as <code>ks</code> 
+      
+      and describe with words and screenshots how they affect the behavior of the cloth as it falls on itself.
+    </b></blockquote>
+
+    <p>
+      <code>density</code>:
+      <code>ks</code>:
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+              <img src="images/p4-d1.png" align="middle" width="400px" />
+              <figcaption>$\text{density} = 1$</figcaption>
+              
+          </td>
+          <td>
+              <img src="images/p4-d50.png" align="middle" width="400px" />
+              <figcaption>$\text{density} = 50$</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+              <img src="images/p4-ks1000.png" align="middle" width="400px" />
+              <figcaption>$\text{ks} = 1,000$</figcaption>
+          </td>
+          <td>
+              <img src="images/p4-ks7500.png" align="middle" width="400px" />
+              <figcaption>$\text{ks} = 7,500$</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      TODO
+    </p>
+
+
+
+    <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-5">
+			<h2 align="middle">Part 5: Cloth Sim</h2>
+		</a>
+
+		<blockquote>
+			<b>
+				Explain in your own words what is a shader program and how vertex and
+				fragment shaders work together to create lighting and material effects.
+			</b>
+		</blockquote>
+
+		<p>
+			Shader programs are convenient and performant ways to perform final
+			modifications to a rendering output by using a separate programming
+			language that takes special advantage of GPUs. Vertex shaders can modify a
+			mesh's structure in ways such as displacement mapping. The vertex shader
+			will pass its output to a fragment shader that can apply colors and
+			simulate lighting effects such as mirroring and custom texturing.
+		</p>
+
+		<blockquote>
+			<b>
+				Explain the Blinn-Phong shading model in your own words. Show a
+				screenshot of your Blinn-Phong shader outputting only the ambient
+				component, a screen shot only outputting the diffuse component, a screen
+				shot only outputting the specular component, and one using the entire
+				Blinn-Phong model.
+			</b>
+		</blockquote>
+
+		<p>
+			The Blinn-Phong shading model attempts to capture realistic lighting
+			effects on an object from the camera's point of view. It does this my
+			modelling 3 separate components of light that may reflect off of the
+			object to the camera and summing up these 3 sources for each point. The
+			diffuse component reflects its light in all outgoing directions and often
+			make up much of the reflection and the basic color of the object. The
+			specular component reflects light in specific outgoing directions to
+			produce shiny effects. The ambient component is a bit of a shortcut that
+			allows us to simulate hard-to-model ambient light that lights up a scene
+			from many bounces.
+		</p>
+
+		<div align="middle">
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-blinn-phong-ambient.png"
+							align="middle"
+							width="400px"
+						/>
+						<figcaption>Ambient component only</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-blinn-phong-diffuse.png"
+							align="middle"
+							width="400px"
+						/>
+						<figcaption>Diffuse component only</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-blinn-phong-specular.png"
+							align="middle"
+							width="400px"
+						/>
+						<figcaption>Specular component only</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-blinn-phong-all.png"
+							align="middle"
+							width="400px"
+						/>
+						<figcaption>Complete Blinn-Phong model</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<blockquote>
+			<b>
+				Show a screenshot of your texture mapping shader using your own custom
+				texture by modifying the textures in <code>/textures/</code>.
+			</b>
+		</blockquote>
+
+		<div align="middle">
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img src="./images/p5-texture-1.png" align="middle" width="400px" />
+						<figcaption>Custom texture before animation</figcaption>
+					</td>
+					<td>
+						<img src="./images/p5-texture-2.png" align="middle" width="400px" />
+						<figcaption>Custom texture after animation</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<blockquote>
+			<b>
+				Show a screenshot of bump mapping on the cloth and on the sphere. Show a
+				screenshot of displacement mapping on the sphere. Use the same texture
+				for both renders. You can either provide your own texture or use one of
+				the ones in the textures directory, BUT choose one that's not the
+				default <code>texture_2.png</code>. Compare the two approaches and
+				resulting renders in your own words. Compare how your the two shaders
+				react to the sphere by changing the sphere mesh's coarseness by using
+				<code>-o 16 -a 16</code> and then <code>-o 128 -a 128</code>.
+			</b>
+		</blockquote>
+
+		<div align="middle">
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-bump-cloth-low.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Bump Mapping on Cloth Low Res</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-bump-cloth-high.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Bump Mapping on Cloth High Res</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-bump-sphere-low.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Bump Mapping on Sphere Low Res</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-bump-sphere-high.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Bump Mapping on Sphere High Res</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-bump-draped-low.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Bump Mapping on Cloth on Sphere Low Res</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-bump-draped-high.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Bump Mapping on Cloth on Sphere High Res</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-displacement-cloth-low.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Displacement Mapping on Cloth Low Res</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-displacement-cloth-high.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Displacement Mapping on Cloth High Res</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-displacement-sphere-low.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Displacement Mapping on Sphere Low Res</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-displacement-sphere-high.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Displacement Mapping on Sphere High Res</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-displacement-draped-low.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>
+							Displacement Mapping on Cloth on Sphere Low Res
+						</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-displacement-draped-high.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>
+							Displacement Mapping on Cloth on Sphere High Res
+						</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<p>
+			Bump mapping and displacement mapping are both ways for a shader to adjust
+			or distort the appearance of a mesh using a texture. As seen in the
+			screenshots, the two methods both provide ways to achieve similar effects
+			of adding more detail to the surface of an object. The screenshots of both
+			methods show textures being applied to the surfaces of the sphere and
+			cloth. These two methods are very different in their underlying
+			implementations, however. Bump mapping calculates what light a point would
+			reflect if it was shifted up or down along its normal and reflects this
+			amount of light. Displacement mapping on the other hand actually moves the
+			points of the mesh rather than just adjusting how it reflects light. You
+			can see in the cloth for displacement mapping that its edges become
+			warped, unlike the bump mapping rendering. These are two very different
+			methods that can achieve similar effects. When it comes to adjusting the
+			coarseness of the renderings, the two both appear to produce relatively
+			high quality and similar images between low and high resolutions. It does,
+			however, appear as though bump mapping handles the coarseness changes
+			slightly better since it isn't actually displacing the points of the mesh.
+		</p>
+
+		<blockquote>
+			<b>
+				Show a screenshot of your mirror shader on the cloth and on the sphere.
+			</b>
+		</blockquote>
+
+		<div align="middle">
+			<table style="width: 100%">
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-mirror-shader-cloth.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Mirror Shader on the Cloth</figcaption>
+					</td>
+					<td>
+						<img
+							src="./images/p5-mirror-shader-sphere.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Mirror Shader on the Sphere</figcaption>
+					</td>
+				</tr>
+				<tr align="center">
+					<td>
+						<img
+							src="./images/p5-mirror-shader-draped.png"
+							align="middle"
+							width="400vw"
+						/>
+						<figcaption>Mirror Shader on the Cloth on the Sphere</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+
+    <blockquote><b>
+    Explain what you did in your custom shader, if you made one.
+    </b></blockquote>
+
+    <p>
+      TODO
+    </p>
+
+
+
+  <h2 align="middle">Contributions</h2>
+  <p>
+    Us Brandons have collaborated for every project and for every project this partnership has been mutually beneficial. We worked together on this project on the couch at our house, taking turns writing code. We learned that it's fun to code together.
+  </p>
+  <h2 align="middle">Mesh Competition Extra Credit (optional)</h2>
+  <blockquote><b>
+    The final (optional) part for the mesh competition is where you have the opportunity to be creative and individual, 
+    so be sure to provide a good description of what you were going for, what you did, and how you did it.
+  </b></blockquote>
+
+  <p>
+    N/A
+  </p>
+
+
+
+  <h2 align="middle">WEBSITE URL</h2>
+    <p>
+      https://yermash.github.io/proj-webpage-template/proj4/index.html
+    </p>
+
+</body>
 </html>
