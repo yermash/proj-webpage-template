@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta content="text/html; charset=UTF-8" http-equiv="content-type">
+	<title>Stylistic Shaders in Unity - CS 184 Project Milestone Status Report</title>
+	<style type="text/css">
+		body {
+			font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+			font-size: 16px;
+			line-height: 1.5;
+			color: #333;
+			background-color: #fff;
+			padding: 0 calc(max(10px, 30% - 120px));
+		}
+
+		h1 {
+			font-size: 36px;
+			margin-bottom: 10px;
+		}
+
+		h2 {
+			font-size: 30px;
+			margin-top: 40px;
+			margin-bottom: 10px;
+		}
+
+		h3 {
+			font-size: 20px;
+			margin: 4px 0;
+		}
+
+		h1, h2, h3 {
+			line-height: 1.2;
+		}
+
+		figure {
+			margin: 20px 0 30px;
+		}
+		fig
+	</style>
+</head>
+
+<body>
+	<h1>Stylistic Shaders in Unity — Milestone Status Report</h1>
+	<h3>Uri Kreindler, Gabriel Mitnick, Brandon Suen, and Brandon Yermash</h3>
+	<p><b><a href="proposal.html">Project proposal</a> summary:</b> We will create a number of different non-photorealistic shaders in Unity and combine them into a demo scene. We will potentially create a single shader that is more complex and detailed to showcase the scene.</p>
+
+	<h2>What we've accomplished so far</h2>
+	<p>So far, we’ve been learning Cg/HLSL and figuring out how to make two types of shaders in Unity – unlit shaders and surface shaders. Following guides on a blog called <a href="https://www.ronja-tutorials.com/">Ronja’s Tutorials</a>, we’ve implemented basic toon shading as a surface shader. Unlit shaders allow us to write all of the lighting code from the ground up. Surface shaders use Unity’s built in lighting algorithms, but let us write a function that computes the lighting color and intensity for each part of the object, based on values like the object normal, lighting direction, and shadow attenuation from Unity’s built in lighting. It’s been easier to get started with surface shaders, not having to calculate things like shadow attenuation ourselves, but to get full control over the shader, we plan on translating some of our work to unlit shaders. We’ve also tried a couple of different methods for rendering object outlines.</p>
+
+	<h2>Preliminary results</h2>
+	<figure>
+		<img src="milestone-img/gradient-map.png">
+		<figcaption>This shader takes the intensity value from standard realistic diffuse lighting but then passes it through a gradient map to give different values different hues, similar to a classic artistic effect.</figcaption>
+	</figure>
+	<figure>
+		<img src="milestone-img/fresnel.png">
+		<figcaption>Fresnel shading adds a glow around the edge of an object proportional to <code>1 - dot(object.Normal, viewDirection)</code> so that surfaces at oblique angles to the viewer glow brighter than ones facing the viewer directly. By putting this value through some additional math (smoothstep, exponent, etc) we can use it as an outline stroke, but the width of the stroke varies on different parts of the image in an undesirable way.</figcaption>
+	</figure>
+	<figure>
+		<img src="milestone-img/single-toon.png">
+		<figcaption>Here’s a basic surface shader implementing toon lighting. Rather than lighting the object smoothly based on the more realistic lighting intensity <code>dot(object.Normal, lightDirection)</code>, we threshold this value to get solid blocks of two colors, so that our computer rendering can emulate the artist rendering style of cel shading. If we apply a hard binary threshold with the <code>step</code> function, we’ll see a jagged, aliased edge between the regions. To anti-alias, we instead use <code>smoothstep</code> with a transition area width based on the derivative of the realistic lighting intensity. We compute this derivative with the openGL function <code>fwidth(someVariable)</code> which approximates the derivative of <code>someVariable</code> by taking the absolute value of the difference between <code>someVariable</code>’s value at the current fragment and its value at one of the neighboring fragments. Apparently this is very performant because modern GPU’s process groups of 4 pixels together, so for each pixel it’s inexpensive to access the variables of its 3 neighbors.</figcaption>
+	</figure>
+	<figure>
+		<img src="milestone-img/hull.png">
+		<figcaption>
+			Now we expand the toon shader to allow multiple color levels. The number of colors used and the difference between them can be controlled by material properties, which we can set with a slider GUI in the Unity editor. We also add specular highlights. In a realistic shader, the specular highlights would be added to the diffuse lighting, but in our stylistic shader, the specular highlights “override” or “obscure” the diffuse lighting. This gives the highlight a nice, hand-drawn appearance.
+			<br>
+			The above render also shows our implementation of a hull outline. This is a better technique for adding a stroke around an object, compared to our Fresnel shading approach. We add a second copy of the same object, called a hull, in the same location as the original object but with three modifications: we shade it as solid black (or whatever the stroke color is), we offset all of its vertices by a small distance in the direction of their normal to make the new object expand in every direction like a wrapper around the original object, and we cull all of the front-facing faces so that we can see the original object again. We’ll just see the new object around the edges of the original object.
+		</figcaption>
+	</figure>
+	<figure>
+		<img src="milestone-img/single-toon-outline.png">
+		<figcaption>This render shows our single-step toon shading with another type of outline added to it. Hull outlining only outlines the boundaries of the object, but we also want internal edges like “valleys” and “mountains” to render with a stroke. We came up with a way to measure the “edginess” of each fragment by taking the norm of the derivative of the surface normal vector. Then we pass the “edginess” through a smoothstep function to determine the opacity of the stroke. One problem with this approach is it accentuates the polygonal artifacts in the object mesh. One way to address this in the future might be to add a post-processing pass where we apply a low-pass filter to the “edginess” values before thresholding them. It might be helpful to do the same thing for the toon lighting. We considered making the “edginess” also be affected by the second derivative of the normal, but because of the way <code>fwidth</code> approximates derivatives, if we tried to do <code>fwidth(fwidth(normal))</code> for the second derivative, it would always return 0.</figcaption>
+	</figure>
+
+	<h2>Reflecting on progress relative to our original plan</h2>
+	<h3>Original plan</h3>
+	<p><b>Week 1:</b> Learn Cg/HLSL/Unity and research existing algorithms. Develop ideas for shaders</p>
+	<p><b>Week 2:</b> Implement a few different shader ideas and a basic scene</p>
+	<p><b>Week 3:</b> Further develop the Unity scene and expand on one or two specific shaders</p>
+	<p><b>Week 4:</b> Put together all shaders with scene and create presentation</p>
+
+	<h3>Current progress</h3>
+	<p>We’ve all learned Cg/HLSL and basic Unity. We have developed ideas for the type of shaders and scenes we eventually want to implement. So far, we have created two distinct types of shaders (unlit and surface) These are likely the shaders we will expand and focus more on for our full non-realistic scenes. Ideally, we would have created a more in-depth and interesting scene to test our shaders on, but we have yet to do so. </p>
+
+	<h2>Updated work plan</h2>
+	<p>We have ~10 days left. We'll continue to expand and work on the shaders to make them as ideal as possible (middle 3 days). We'll make a few dedicated and complex scenes to model our shaders (first 3 days). Finally, we'll put everything together and create our presentation (last 3 days)</p>
+	<br>
+	<br>
+</body>
+
+</html>
