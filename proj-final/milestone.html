@@ -45,6 +45,8 @@
 	<h1>Stylistic Shaders in Unity — Milestone Status Report</h1>
 	<h3>Uri Kreindler, Gabriel Mitnick, Brandon Suen, and Brandon Yermash</h3>
 	<p><b><a href="proposal.html">Project proposal</a> summary:</b> We will create a number of different non-photorealistic shaders in Unity and combine them into a demo scene. We will potentially create a single shader that is more complex and detailed to showcase the scene.</p>
+	<h3>Links: <a href="https://www.youtube.com/watch?v=m4787JjCtxE
+">video</a>, <a href="https://docs.google.com/presentation/d/156es-MZJ577JvZN2GhUAvyXR0-IFnFlx394PemVoFsE/edit?usp=sharing">slides</a></h4>
 
 	<h2>What we've accomplished so far</h2>
 	<p>So far, we’ve been learning Cg/HLSL and figuring out how to make two types of shaders in Unity – unlit shaders and surface shaders. Following guides on a blog called <a href="https://www.ronja-tutorials.com/">Ronja’s Tutorials</a>, we’ve implemented basic toon shading as a surface shader. Unlit shaders allow us to write all of the lighting code from the ground up. Surface shaders use Unity’s built in lighting algorithms, but let us write a function that computes the lighting color and intensity for each part of the object, based on values like the object normal, lighting direction, and shadow attenuation from Unity’s built in lighting. It’s been easier to get started with surface shaders, not having to calculate things like shadow attenuation ourselves, but to get full control over the shader, we plan on translating some of our work to unlit shaders. We’ve also tried a couple of different methods for rendering object outlines.</p>
